@@ -165,8 +165,8 @@ process VCF2TABLE {
     container 'patricie/vcf2table-image:v1.3'
     publishDir "${params.outdir}/${tumor}_vs_${normal}", mode: 'copy'
     // publishDir "${params.outdir2}/annotation/freebayes/${tumor}_vs_${normal}", mode: 'copy'
-    label 's_cpu'
-    label 'xxxl_mem'
+    label 'm_cpu'
+    label 'xxl_mem'
 
     input:
     tuple val(sample_id), val(tumor), val(normal), path(filt_vcf), path(filt_tbi)
@@ -175,11 +175,13 @@ process VCF2TABLE {
     tuple val(sample_id), val(tumor), val(normal), path("*.csv"), emit: table
 
     script:
-    def out_csv = "${tumor}_vs_${normal}.ensemble.csv"
+    def out_csv = "${tumor}_vs_${normal}.ensemble_norm_filt_VEP_ann.csv"
     """
     python ${params.vcf2table} genome \
         -report_normal \
         --build hg38 \
+        --parallel_proc ${task.cpus} \
+        --log_time \
         --input ${filt_vcf} \
         --tumor ${tumor} > ${out_csv}
     """
@@ -235,6 +237,6 @@ workflow {
     COMBINE_VARIANTS(REHEADER_VCFs.out.reheadered)
 
     // --- 4. VCF to CSV ---
-    VCF2TABLE(COMBINE_VARIANTS.out.combined.first())
+    VCF2TABLE(COMBINE_VARIANTS.out.combined)
 
 }
